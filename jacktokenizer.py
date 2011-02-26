@@ -18,10 +18,13 @@ class JackTokenizer:
     
     
     def __init__(self, jack_filename):
+        """Opens the input file/stream and gets ready to tokenize it."""
         self.jackfile = open(jack_filename, "rU")
         self.currentToken = ""
+    
            
     def hasMoreTokens(self):
+        """Do we have more tokens in the input?"""
         peekchar = self._peeknextchar()
 
         if peekchar == "":
@@ -31,7 +34,7 @@ class JackTokenizer:
         
          
     def advance(self):
-    
+        """Gets the next token from the input and makes it the current token."""
         if not self.hasMoreTokens():
             return
         
@@ -40,24 +43,20 @@ class JackTokenizer:
         
         #skip spaces and empty lines     
         while re.match(self._space, currentchar) is not None:
-            #print "skip empty2"
             currentchar = self._getnextchar()
             
         while currentchar == "/" and self._peeknextchar() == "/":
             # // comment line
-            #print "line is comment, skipping"
             self._skipwholeline()
             currentchar = self._getnextchar() #get next char after comment line
                     
         
         #skip spaces and empty lines     
         while re.match(self._space, currentchar) is not None:
-            #print "skip empty1"
             currentchar = self._getnextchar()
         
         while currentchar == "/" and self._peeknextchar() == "*":
             # /* multline comment
-            #print "line is multi comment, skipping"
             self._getnextchar() # skip * in /*
             while True:
                 currentchar = self._getnextchar()
@@ -68,21 +67,17 @@ class JackTokenizer:
         
         #skip spaces and empty lines     
         while re.match(self._space, currentchar) is not None:
-            #print "skip empty2"
             currentchar = self._getnextchar()
         
         
-        while True:
-            
+        while True:          
             if not self.hasMoreTokens():
                 return
 
             self.currentToken += currentchar
-            #print self.currentToken
             
             if re.match(self._space, self._peeknextchar()) is not None:
                 #next char is a space, current is token
-                #print "token %s" % self.currentToken
                 return
                 
             if self._peeknextchar() in self._symbol:
@@ -94,12 +89,10 @@ class JackTokenizer:
                 return
                 
             currentchar = self._getnextchar()
-            
-        #print self.currentToken
-                
-            
-        
+                    
+
     def tokenType(self):
+        """Returns the type of the current token."""
         if self.currentToken in self._keywords:
             return self.Keyword
         
@@ -114,37 +107,60 @@ class JackTokenizer:
             
         if re.match(self._identifier, self.currentToken) is not None:
             return self.Identifier
+
             
     def keyWord(self):
+        """Returns the keyword which is the current token."""
         if self.tokenType() == JackTokenizer.Keyword:
-            print "<keyword> %s </keyword>" % self.currentToken
             return self.currentToken
+
         
     def symbol(self):
+        """Returns the character which is the current token."""
         if self.tokenType() == JackTokenizer.Symbol:
-            print "<symbol> %s </symbol>" % self.currentToken
             return self.currentToken
+
         
     def identifier(self):
+        """Returns the identifier which is the current token."""
         if self.tokenType() == JackTokenizer.Identifier:
-            print "<identifier> %s </identifier>" % self.currentToken
             return self.currentToken
+
         
     def intVal(self):
+        """Returns the integer value of the current token."""
         if self.tokenType() == JackTokenizer.IntegerConstant:
-            print "<integerConstant> %d </integerConstant>" % self.currentToken
             return int(self.currentToken)
-        
+
+
     def stringVal(self):
+        """Returns the string value of the current token, without the double quotes."""
         if self.tokenType() == JackTokenizer.StringConstant:
-            print "<stringConstant> %s </stringConstant>" % self.currentToken
             return self.currentToken
+
+    
+    def printToken(self):
+        if self.tokenType() == JackTokenizer.Keyword:
+            return "<keyword> %s </keyword>" % self.currentToken
+        elif self.tokenType() == JackTokenizer.Symbol:
+            return "<symbol> %s </symbol>" % self.currentToken
+        elif self.tokenType() == JackTokenizer.Identifier:
+            return "<identifier> %s </identifier>" % self.currentToken
+        elif self.tokenType() == JackTokenizer.IntegerConstant:
+            return "<integerConstant> %d </integerConstant>" % self.currentToken
+        elif self.tokenType() == JackTokenizer.StringConstant:
+            return "<stringConstant> %s </stringConstant>" % self.currentToken
+        else:
+            return "Token: %s" % self.currentToken    
+
         
     def _getnextchar(self):
         return self.jackfile.read(1)
 
+
     def _skipwholeline(self):
         self.jackfile.readline()
+
         
     def _peeknextchar(self):
         next_char = self.jackfile.read(1)
@@ -153,39 +169,26 @@ class JackTokenizer:
             self.jackfile.seek(-1, 1)
             
         return next_char
-        
-    def printchar(self, currchar):
-        if currchar == "\n":
-            print "NewLine"
-        elif currchar == " ":
-            print "Space"
-        elif currchar == "":
-            print "EmptySpace"
-        elif currchar == "\r":
-            print "Return"
-        elif currchar == "\r\n":
-            print "Cr\lf"
-        else:
-            print "Looking at %s with length %d" % (currchar, len(currchar))
-          
+   
+       
 def main(argv):
+    import os.path
     jackfilename = argv[1]
     
+    #getting jack file name
+    (jfilename, jextension) = os.path.splitext(jackfilename)
+    jtokresultfilename = jfilename + "T.xml" #just to be consistent with the book
+    
     jtok = JackTokenizer(jackfilename)
-    print "<tokens>"
-    while jtok.hasMoreTokens():
+    
+    with open(jtokresultfilename, "w") as jtokresult:
+        jtokresult.write("<tokens>")
         jtok.advance()
-        if jtok.tokenType() == JackTokenizer.Keyword:
-            jtok.keyWord()
-        elif jtok.tokenType() == JackTokenizer.Symbol:
-            jtok.symbol()
-        elif jtok.tokenType() == JackTokenizer.IntegerConstant:
-            jtok.intVal()
-        elif jtok.tokenType() == JackTokenizer.StringConstant:
-            jtok.stringVal
-        elif jtok.tokenType() == JackTokenizer.Identifier:
-            jtok.identifier()
-    print "</tokens>"          
+        while jtok.hasMoreTokens():
+            jtokresult.write(jtok.printToken())
+            jtok.advance()
+
+        jtokresult.write("</tokens>")
 
 if __name__ == "__main__":
     import sys
