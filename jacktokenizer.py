@@ -6,7 +6,7 @@ class JackTokenizer:
     _keywords = ["class", "constructor", "function", "method", "field", "static", "var", "int", "char", "boolean", "void", "true", "false", "null", "this", "let", "do", "if", "else", "while", "return"]
     _symbol = ["{", "}", "(", ")", "[", "]", ".", ",", ";", "+", "-", "*", "/", "&", "|", "<", ">", "=", "~"]
     _integerConstant = "\d{1,5}"
-    _stringConstant = "\"\S*\""
+    _stringConstant = "\"(\S*\s*)*\""
     _identifier = "\w+"
     _space = "\n|\t| "
     
@@ -76,15 +76,19 @@ class JackTokenizer:
 
             self.currentToken += currentchar
             
-            if re.match(self._space, self._peeknextchar()) is not None:
+            if self.currentToken.startswith("\""):
+                #matching a quoted string
+                if self._peeknextchar() == "\"":
+                    #matching closing quote
+                    self.currentToken = self.currentToken + self._getnextchar()
+                    return
+            elif re.match(self._space, self._peeknextchar()) is not None:
                 #next char is a space, current is token
                 return
-                
-            if self._peeknextchar() in self._symbol:
+            elif self._peeknextchar() in self._symbol:
                 #next char is a symbol, so current is token
                 return
-            
-            if self.currentToken in self._symbol:
+            elif self.currentToken in self._symbol:
                 #current char is a symbol, special case, so token
                 return
                 
@@ -130,26 +134,34 @@ class JackTokenizer:
     def intVal(self):
         """Returns the integer value of the current token."""
         if self.tokenType() == JackTokenizer.IntegerConstant:
-            return int(self.currentToken)
+            return self.currentToken
 
 
     def stringVal(self):
         """Returns the string value of the current token, without the double quotes."""
         if self.tokenType() == JackTokenizer.StringConstant:
-            return self.currentToken
+            #skip quotes in constant
+            return self.currentToken[1:-1]
 
     
     def printToken(self):
         if self.tokenType() == JackTokenizer.Keyword:
             return "<keyword> %s </keyword>" % self.currentToken
         elif self.tokenType() == JackTokenizer.Symbol:
-            return "<symbol> %s </symbol>" % self.currentToken
+            if self.currentToken == "<":
+                return "<symbol> &lt; </symbol>"
+            elif self.currentToken == ">":
+                return "<symbol> &gt; </symbol>"
+            elif self.currentToken == "&":
+                return "<symbol> &amp; </symbol>"
+            else:
+                return "<symbol> %s </symbol>" % self.currentToken
         elif self.tokenType() == JackTokenizer.Identifier:
             return "<identifier> %s </identifier>" % self.currentToken
         elif self.tokenType() == JackTokenizer.IntegerConstant:
-            return "<integerConstant> %d </integerConstant>" % self.currentToken
+            return "<integerConstant> %s </integerConstant>" % self.currentToken
         elif self.tokenType() == JackTokenizer.StringConstant:
-            return "<stringConstant> %s </stringConstant>" % self.currentToken
+            return "<stringConstant> %s </stringConstant>" % self.currentToken[1:-1]
         else:
             return "Token: %s" % self.currentToken    
 
