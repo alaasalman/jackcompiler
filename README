@@ -1,0 +1,19 @@
+jackcompiler: a toy compiler for the Jack programming language
+=============================================
+
+As part of the projects in the book The Elements of Computing Systems, a compiler is implemented for the Jack programming language. The Jack compiler and code generator is used as part of the projects while building the computer.
+
+The tokenizer and parser generate xml files as an intermediate representation and for testing purposes. Sample Jack programs are also included in the repo.
+
+I tried to follow the book as much as possible to help other readers, but when it made more sense I did my own thing.
+
+Feedback is always welcome.
+
+Installation
+------------
+The only requirement is a python installation. Any python 2.X > 2.5 should do.
+
+Wishlist
+----------
+- better error reporting while tokenizing and parsing
+- regular expression don't exactly follow the defined grammar, they're too general
